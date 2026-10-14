@@ -26,17 +26,17 @@ rust-version = "1.99"
 
 [workspace.dependencies]
 # Internal crates
-mesh-protocol = { path = "crates/mesh-protocol" }
-mesh-identity = { path = "crates/mesh-identity" }
-mesh-scheduler = { path = "crates/mesh-scheduler" }
-mesh-runtime = { path = "crates/mesh-runtime" }
-mesh-verifier = { path = "crates/mesh-verifier" }
-mesh-accounting = { path = "crates/mesh-accounting" }
-mesh-settlement = { path = "crates/mesh-settlement" }
-mesh-agent-protocol = { path = "crates/mesh-agent-protocol" }
-mesh-agent-runtime = { path = "crates/mesh-agent-runtime" }
-mesh-network = { path = "crates/mesh-network" }
-mesh-storage = { path = "crates/mesh-storage" }
+mesh-protocol = { path = "crates/mesh-protocol", version = "0.1.0" }
+mesh-identity = { path = "crates/mesh-identity", version = "0.1.0" }
+mesh-scheduler = { path = "crates/mesh-scheduler", version = "0.1.0" }
+mesh-runtime = { path = "crates/mesh-runtime", version = "0.1.0" }
+mesh-verifier = { path = "crates/mesh-verifier", version = "0.1.0" }
+mesh-accounting = { path = "crates/mesh-accounting", version = "0.1.0" }
+mesh-settlement = { path = "crates/mesh-settlement", version = "0.1.0" }
+mesh-agent-protocol = { path = "crates/mesh-agent-protocol", version = "0.1.0" }
+mesh-agent-runtime = { path = "crates/mesh-agent-runtime", version = "0.1.0" }
+mesh-network = { path = "crates/mesh-network", version = "0.1.0" }
+mesh-storage = { path = "crates/mesh-storage", version = "0.1.0" }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -84,8 +84,8 @@ chrono = { version = "0.4", features = ["serde"] }
 # Resource detection
 sysinfo = "0.33"
 
-# Workload isolation
-wasmtime = "26"
+# Workload isolation (36.0.16+ clears RUSTSEC-2026-0316 and related)
+wasmtime = "36.0.16"
 wat = "1"
 
 # Hashing
