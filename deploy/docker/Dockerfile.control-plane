@@ -1,0 +1,14 @@
+# Build stage
+FROM rust:bookworm AS builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release -p mesh-control-plane
+
+# Runtime stage
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/mesh-control-plane /usr/local/bin/mesh-control-plane
+EXPOSE 8080
+ENTRYPOINT ["mesh-control-plane"]

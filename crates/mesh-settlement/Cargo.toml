@@ -1,0 +1,26 @@
+[package]
+name = "mesh-settlement"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+# Builds the EVM (alloy) settlement backend.
+evm = ["dep:alloy", "dep:url"]
+
+[dependencies]
+mesh-protocol.workspace = true
+sqlx.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha3 = "0.10"
+thiserror.workspace = true
+hex.workspace = true
+tokio = { workspace = true, features = ["macros", "rt", "time"] }
+
+alloy = { version = "2", features = ["providers", "contract", "signer-local", "network", "rpc-types", "sol-types"], optional = true }
+url = { version = "2", optional = true }

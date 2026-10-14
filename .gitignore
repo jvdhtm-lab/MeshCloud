@@ -1,0 +1,38 @@
+# Rust / Cargo
+/target
+**/*.rs.bk
+*.pdb
+
+# SQLx offline cache is committed for now; keep the comment to document intent.
+# .sqlx/
+
+# Local environment
+.env
+.env.local
+
+# Worker node identities (private keys) — never commit these.
+*.nodekey
+node-identity*.json
+node.key
+agent-*.key
+master.key
+secrets/
+
+# Local storage prototype data
+storage/
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Foundry
+contracts/lib/
+contracts/out/
+contracts/cache/
+contracts/broadcast/

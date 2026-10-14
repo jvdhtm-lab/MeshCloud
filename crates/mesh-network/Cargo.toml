@@ -1,0 +1,42 @@
+[package]
+name = "mesh-network"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+# Enables the full rust-libp2p transport (gossipsub + identify + relay).
+libp2p = ["dep:libp2p"]
+
+[dependencies]
+mesh-protocol.workspace = true
+mesh-identity.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+sha2.workspace = true
+hex.workspace = true
+thiserror.workspace = true
+
+# Real libp2p peer identities (lightweight; no full stack). Version pinned to
+# match the libp2p release below so keypair types unify.
+libp2p-identity = { version = "0.2", features = ["ed25519", "peerid"] }
+
+# Full libp2p stack, only when the `libp2p` feature is enabled.
+libp2p = { version = "0.55", optional = true, features = [
+    "tokio",
+    "tcp",
+    "noise",
+    "yamux",
+    "gossipsub",
+    "identify",
+    "relay",
+    "dcutr",
+    "macros",
+] }
+
+[dev-dependencies]
+proptest.workspace = true

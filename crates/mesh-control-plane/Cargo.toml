@@ -1,0 +1,55 @@
+[package]
+name = "mesh-control-plane"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "mesh-control-plane"
+path = "src/main.rs"
+
+[features]
+# Enables integration tests that require a running Docker daemon.
+integration-tests = ["dep:testcontainers", "dep:testcontainers-modules"]
+# Enables the EVM (alloy) settlement backend. Off by default so the core build
+# does not depend on the large alloy stack.
+evm = ["mesh-settlement/evm"]
+# Enables the libp2p mesh transport. Off by default.
+libp2p = ["mesh-network/libp2p"]
+
+[dependencies]
+mesh-protocol.workspace = true
+mesh-identity.workspace = true
+mesh-scheduler.workspace = true
+mesh-verifier.workspace = true
+mesh-accounting.workspace = true
+mesh-settlement.workspace = true
+mesh-agent-protocol.workspace = true
+mesh-agent-runtime.workspace = true
+mesh-network.workspace = true
+mesh-storage.workspace = true
+hex.workspace = true
+base64.workspace = true
+
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+http.workspace = true
+tokio.workspace = true
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+figment.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+url.workspace = true
+
+# Test-only dependencies, only compiled when `integration-tests` is enabled.
+testcontainers = { workspace = true, optional = true }
+testcontainers-modules = { workspace = true, optional = true }

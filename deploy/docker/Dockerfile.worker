@@ -1,0 +1,14 @@
+# Build stage
+FROM rust:bookworm AS builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release -p mesh-worker
+
+# Runtime stage
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/mesh-worker /usr/local/bin/mesh-worker
+RUN mkdir -p /var/lib/meshcloud
+ENTRYPOINT ["mesh-worker"]

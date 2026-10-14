@@ -1,0 +1,36 @@
+# Worker configuration for local development.
+# Environment variables (MESH_*) override these values.
+
+control_plane_url = "http://localhost:8080"
+identity_path = "node.key"
+# Number of AI agents this worker hosts (identities stored beside node.key).
+agent_count = 0
+agent_skills = ["deterministic", "planning"]
+heartbeat_interval_seconds = 15
+offer_ttl_seconds = 90
+
+# Resource advertisement (cpu_cores/ram_gb are detected when unset).
+storage_gb = 50
+gpu = false
+max_cpu_percent = 50
+max_memory_mb = 2048
+availability = "when_idle"
+supported_workloads = ["echo", "wasm", "delegate"]
+poll_interval_seconds = 5
+
+# WASM sandbox limits.
+fuel_limit = 1000000000
+execution_timeout_seconds = 5
+runtime_isolation = true
+
+# Test hook: exit after N heartbeats to simulate a crash (unset by default).
+# simulate_crash_after_heartbeats = 5
+
+# libp2p mesh (disabled unless network_listen is set).
+# network_listen = "/ip4/127.0.0.1/tcp/4011"
+# network_bootstrap = "/ip4/127.0.0.1/tcp/4010/p2p/<peer-id>"
+network_topic = "meshcloud/nodes"
+network_ttl_seconds = 120
+
+log_level = "info"
+log_json = false

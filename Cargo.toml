@@ -1,0 +1,112 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mesh-protocol",
+    "crates/mesh-identity",
+    "crates/mesh-scheduler",
+    "crates/mesh-runtime",
+    "crates/mesh-verifier",
+    "crates/mesh-accounting",
+    "crates/mesh-settlement",
+    "crates/mesh-agent-protocol",
+    "crates/mesh-agent-runtime",
+    "crates/mesh-network",
+    "crates/mesh-storage",
+    "crates/mesh-control-plane",
+    "crates/mesh-worker",
+    "crates/mesh-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/meshcloud/meshcloud"
+rust-version = "1.99"
+
+[workspace.dependencies]
+# Internal crates
+mesh-protocol = { path = "crates/mesh-protocol" }
+mesh-identity = { path = "crates/mesh-identity" }
+mesh-scheduler = { path = "crates/mesh-scheduler" }
+mesh-runtime = { path = "crates/mesh-runtime" }
+mesh-verifier = { path = "crates/mesh-verifier" }
+mesh-accounting = { path = "crates/mesh-accounting" }
+mesh-settlement = { path = "crates/mesh-settlement" }
+mesh-agent-protocol = { path = "crates/mesh-agent-protocol" }
+mesh-agent-runtime = { path = "crates/mesh-agent-runtime" }
+mesh-network = { path = "crates/mesh-network" }
+mesh-storage = { path = "crates/mesh-storage" }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Web / API
+axum = "0.7"
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["trace", "limit"] }
+http = "1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Config
+figment = { version = "0.10", features = ["toml", "env"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+
+# Database
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "postgres",
+    "migrate",
+    "macros",
+    "uuid",
+    "chrono",
+    "json",
+    "derive",
+] }
+
+# Identity / crypto
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"
+zeroize = { version = "1", features = ["derive"] }
+hex = "0.4"
+base64 = "0.22"
+
+# Identifiers & time
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Resource detection
+sysinfo = "0.33"
+
+# Workload isolation
+wasmtime = "26"
+wat = "1"
+
+# Hashing
+sha2 = "0.10"
+
+# CLI / HTTP client
+clap = { version = "4", features = ["derive", "env"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Errors
+anyhow = "1"
+thiserror = "2"
+
+# URL parsing
+url = "2"
+
+# Testing
+proptest = "1"
+testcontainers = "0.23"
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,16 @@
+[package]
+name = "mesh-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+mesh-protocol.workspace = true
+aes-gcm = "0.10"
+reed-solomon-erasure = "6"
+rand.workspace = true
+sha2.workspace = true
+hex.workspace = true
+thiserror.workspace = true

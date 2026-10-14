@@ -1,0 +1,81 @@
+# MeshCloud local simulation: PostgreSQL + control plane + three workers.
+#
+#   docker compose up --build -d
+#   docker compose logs -f mesh-control-plane
+#   docker compose down -v
+
+services:
+  mesh-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mesh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mesh_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-meshcloud}
+    ports:
+      - "55432:5432"
+    volumes:
+      - mesh-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mesh} -d ${POSTGRES_DB:-meshcloud}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mesh-control-plane:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.control-plane
+    environment:
+      MESH_BIND_ADDR: 0.0.0.0:8080
+      MESH_DATABASE_URL: postgres://${POSTGRES_USER:-mesh}:${POSTGRES_PASSWORD:-mesh_dev_password}@mesh-postgres:5432/${POSTGRES_DB:-meshcloud}
+      MESH_DATABASE_MAX_CONNECTIONS: "10"
+      MESH_LOG__LEVEL: info
+      MESH_LOG__FORMAT: pretty
+    ports:
+      - "18080:8080"
+    depends_on:
+      mesh-postgres:
+        condition: service_healthy
+
+  mesh-worker-1:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.worker
+    image: meshcloud-worker:latest
+    environment: &worker-env
+      MESH_CONTROL_PLANE_URL: http://mesh-control-plane:8080
+      MESH_IDENTITY_PATH: /var/lib/meshcloud/node.key
+      MESH_STORAGE_GB: "50"
+      MESH_AVAILABILITY: when_idle
+      MESH_LOG_LEVEL: info
+      MESH_AGENT_COUNT: "2"
+    volumes:
+      - mesh-worker-1-data:/var/lib/meshcloud
+    depends_on:
+      - mesh-control-plane
+
+  mesh-worker-2:
+    image: meshcloud-worker:latest
+    environment:
+      <<: *worker-env
+      MESH_AGENT_COUNT: "1"
+    volumes:
+      - mesh-worker-2-data:/var/lib/meshcloud
+    depends_on:
+      - mesh-control-plane
+
+  mesh-worker-3:
+    image: meshcloud-worker:latest
+    environment:
+      <<: *worker-env
+      MESH_AGENT_COUNT: "0"
+    volumes:
+      - mesh-worker-3-data:/var/lib/meshcloud
+    depends_on:
+      - mesh-control-plane
+
+volumes:
+  mesh-pgdata:
+  mesh-worker-1-data:
+  mesh-worker-2-data:
+  mesh-worker-3-data:

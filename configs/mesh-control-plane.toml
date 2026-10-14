@@ -1,0 +1,44 @@
+# Control-plane configuration for local development.
+# Environment variables (MESH_*) override these values.
+
+bind_addr = "0.0.0.0:8080"
+database_url = "postgres://mesh:mesh_dev_password@localhost:5432/meshcloud"
+database_max_connections = 10
+heartbeat_interval_seconds = 30
+node_offline_after_seconds = 90
+job_lease_seconds = 60
+job_sweep_interval_seconds = 10
+
+# Verification (re-execution) limits and reward policy.
+verification_memory_mb = 256
+verification_fuel = 1000000000
+verification_timeout_seconds = 10
+reward_policy_version = 1
+reward_rate_per_unit = 1
+delegator_reward_rate_per_unit = 1
+
+# Settlement (local ledger by default; "evm" uses an EVM JSON-RPC endpoint).
+settlement_backend = "local"
+settlement_chain_id = 31337
+settlement_batch_size = 100
+settlement_interval_seconds = 10
+
+# Per-agent message metering (rate + byte budgets).
+agent_message_rate_per_second = 10.0
+agent_message_burst = 20.0
+agent_message_bytes_per_second = 100000.0
+agent_message_bytes_burst = 200000.0
+
+# Maximum credits a participant may reserve at once (0 = unlimited).
+participant_quota_credits = 0
+
+# Replica role: only `primary` runs background writers.
+replica_role = "primary"
+
+# libp2p mesh (disabled unless network_listen is set).
+# network_listen = "/ip4/127.0.0.1/tcp/4010"
+network_topic = "meshcloud/nodes"
+
+[log]
+level = "info"
+format = "pretty"

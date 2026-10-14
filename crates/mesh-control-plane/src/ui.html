@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MeshCloud</title>
+<style>
+  :root { --bg:#0f1420; --panel:#171e2e; --line:#26304a; --text:#e6ebf5; --muted:#8b98b5; --accent:#5b9dff; --ok:#3ddc84; --warn:#ffb454; --bad:#ff6b6b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 "Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; align-items:center; gap:16px; padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; }
+  header h1 { font-size:16px; margin:0; letter-spacing:.5px; }
+  header .spacer { flex:1; }
+  .dot { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .on { background:var(--ok); } .off { background:var(--bad); }
+  .pill { padding:3px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:12px; }
+  main { padding:18px 20px 60px; max-width:1400px; margin:0 auto; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .card .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.6px; }
+  .card .v { font-size:26px; font-weight:600; margin-top:4px; }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:10px; margin-bottom:16px; overflow:hidden; }
+  section h2 { font-size:13px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); margin:0; padding:12px 16px; border-bottom:1px solid var(--line); }
+  table { width:100%; border-collapse:collapse; }
+  th,td { text-align:left; padding:8px 16px; border-bottom:1px solid var(--line); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px; }
+  th { color:var(--muted); font-weight:500; font-size:12px; }
+  tr:last-child td { border-bottom:none; }
+  .status-online,.status-succeeded,.status-issued,.status-settled,.status-present,.status-healthy { color:var(--ok); }
+  .status-offline,.status-failed,.status-void,.status-lost,.status-missing { color:var(--bad); }
+  .status-pending,.status-scheduled,.status-running,.status-batched,.status-degraded,.status-retry_wait,.status-waiting_on_children { color:var(--warn); }
+  code { color:var(--accent); }
+  .empty { padding:14px 16px; color:var(--muted); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px){ .grid2{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>MeshCloud</h1>
+  <span class="pill"><span id="healthDot" class="dot off"></span><span id="healthText">connecting…</span></span>
+  <span class="pill" id="rolePill">role: —</span>
+  <span class="pill" id="peerPill">peers: —</span>
+  <span class="spacer"></span>
+  <span class="pill" id="updated">—</span>
+</header>
+<main>
+  <div class="cards" id="cards"></div>
+  <div class="grid2">
+    <section><h2>Nodes</h2><div id="nodes"></div></section>
+    <section><h2>Agents</h2><div id="agents"></div></section>
+  </div>
+  <section><h2>Jobs</h2><div id="jobs"></div></section>
+  <div class="grid2">
+    <section><h2>Contributions</h2><div id="contributions"></div></section>
+    <section><h2>Settlements</h2><div id="settlements"></div></section>
+  </div>
+  <section><h2>Storage objects</h2><div id="storage"></div></section>
+  <section><h2>Metrics</h2><div id="metrics"><pre style="margin:0;padding:12px 16px;color:var(--muted)"></pre></div></section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function get(path){ const r = await fetch(path); if(!r.ok) throw new Error(path+" "+r.status); return r.json(); }
+async function getText(path){ const r = await fetch(path); return r.text(); }
+
+function table(rows, cols, empty){
+  if(!rows || rows.length===0) return `<div class="empty">${empty}</div>`;
+  const head = cols.map(c=>`<th>${c.h}</th>`).join("");
+  const body = rows.map(r=>`<tr>${cols.map(c=>`<td>${c.f(r)}</td>`).join("")}</tr>`).join("");
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+const cls = (s)=>`class="status-${esc(s)}"`;
+
+function cardsFrom(m){
+  const items = [
+    ["Nodes online", m.nodes_online], ["Agents online", m.agents_online],
+    ["Jobs pending", m.jobs_pending], ["Jobs running", m.jobs_running],
+    ["Jobs succeeded", m.jobs_succeeded_total], ["Jobs failed", m.jobs_failed_total],
+    ["Receipts issued", m.receipts_issued], ["Receipts void", m.receipts_void],
+    ["Storage objects", m.storage_objects], ["Abuse reports", m.abuse_reports_total],
+  ];
+  return items.map(([k,v])=>`<div class="card"><div class="k">${k}</div><div class="v">${v ?? "—"}</div></div>`).join("");
+}
+
+async function refresh(){
+  try {
+    const health = await get("/api/v1/health");
+    $("healthDot").className = "dot on"; $("healthText").textContent = "v"+health.version+" · up "+health.uptime_seconds+"s";
+  } catch { $("healthDot").className = "dot off"; $("healthText").textContent = "unreachable"; }
+
+  const status = await get("/api/v1/network/status").catch(()=>({}));
+  $("rolePill").textContent = "role: "+(status.role ?? "—")+(status.writers_enabled ? " (writer)" : "");
+  $("peerPill").textContent = "peers: "+(status.peer_count ?? 0);
+
+  const [nodes, agents, jobs, contribs, settlements, storage] = await Promise.all([
+    get("/api/v1/nodes").catch(()=>[]),
+    get("/api/v1/agents").catch(()=>[]),
+    get("/api/v1/jobs?limit=25").catch(()=>[]),
+    get("/api/v1/contributions?limit=25").catch(()=>[]),
+    get("/api/v1/settlements?limit=25").catch(()=>[]),
+    get("/api/v1/storage/objects").catch(()=>[]),
+  ]);
+
+  const agentsByNode = {};
+  agents.forEach(a => {
+    const g = agentsByNode[a.node_id] || (agentsByNode[a.node_id] = { total: 0, online: 0 });
+    g.total += 1;
+    if (a.status === "online") g.online += 1;
+  });
+
+  $("nodes").innerHTML = table(nodes, [
+    {h:"Node", f:r=>esc(r.node_id)}, {h:"Participant", f:r=>esc(r.participant_id)},
+    {h:"Status", f:r=>`<span ${cls(r.status)}>${esc(r.status)}</span>`},
+    {h:"CPU/RAM/Storage", f:r=>`${r.capabilities.cpu_cores}c / ${r.capabilities.ram_gb}GB / ${r.capabilities.storage_gb}GB`},
+    {h:"Agents", f:r=>{ const g = agentsByNode[r.node_id]; return g ? `${g.online}/${g.total} online` : "0"; }},
+  ], "no nodes");
+
+  $("agents").innerHTML = table(agents, [
+    {h:"Agent", f:r=>esc(r.agent_id)}, {h:"Node", f:r=>esc(r.node_id)},
+    {h:"Status", f:r=>`<span ${cls(r.status)}>${esc(r.status)}</span>`},
+    {h:"Skills", f:r=>esc((r.capabilities.skills||[]).join(", "))},
+  ], "no agents");
+
+  $("jobs").innerHTML = table(jobs, [
+    {h:"Job", f:r=>esc(r.job_id)}, {h:"Kind", f:r=>esc(r.kind)}, {h:"Type", f:r=>esc(r.workload_type)},
+    {h:"State", f:r=>`<span ${cls(r.state)}>${esc(r.state)}</span>`},
+    {h:"Attempts", f:r=>`${r.attempts}/${r.max_attempts}`},
+    {h:"Depth", f:r=>r.depth}, {h:"Agent", f:r=>esc(r.assignee_agent_id||"-")},
+    {h:"Result", f:r=>esc((r.result_hash||"").slice(0,16))},
+  ], "no jobs");
+
+  $("contributions").innerHTML = table(contribs, [
+    {h:"Receipt", f:r=>esc(r.receipt_id)}, {h:"Role", f:r=>esc(r.role)},
+    {h:"Participant", f:r=>esc(r.participant_id)}, {h:"Reward", f:r=>r.reward_amount},
+    {h:"Status", f:r=>`<span ${cls(r.status)}>${esc(r.status)}</span>`},
+  ], "no contributions");
+
+  $("settlements").innerHTML = table(settlements, [
+    {h:"Batch", f:r=>esc(r.batch_id)}, {h:"Receipts", f:r=>r.receipt_count},
+    {h:"Total", f:r=>r.total_reward},
+    {h:"Status", f:r=>`<span ${cls(r.status)}>${esc(r.status)}</span>`},
+    {h:"Tx", f:r=>esc((r.tx_hash||"-").slice(0,20))},
+  ], "no settlements");
+
+  $("storage").innerHTML = table(storage, [
+    {h:"Object", f:r=>esc(r.object_id)}, {h:"Size", f:r=>r.size_bytes},
+    {h:"Shards", f:r=>`${r.data_shards}+${r.parity_shards}`},
+    {h:"Status", f:r=>`<span ${cls(r.status)}>${esc(r.status)}</span>`},
+  ], "no objects");
+
+  const metrics = await getText("/api/v1/metrics").catch(()=>"");
+  $("metrics").innerHTML = `<pre style="margin:0;padding:12px 16px;color:var(--muted)">${esc(metrics)}</pre>`;
+  const parsed = {};
+  metrics.split("\n").forEach(l=>{ const m=l.match(/^meshcloud_(\w+)\s+(\d+)$/); if(m) parsed[m[1]]=m[2]; });
+  $("cards").innerHTML = cardsFrom(parsed);
+
+  $("updated").textContent = "updated "+new Date().toLocaleTimeString();
+}
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>
