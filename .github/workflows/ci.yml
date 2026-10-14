@@ -50,15 +50,21 @@ jobs:
   audit:
     name: cargo-audit
     runs-on: ubuntu-latest
-    # Advisory in the prototype: reports findings without failing the build.
-    continue-on-error: true
+    permissions:
+      contents: read
+      checks: write
     steps:
       - uses: actions/checkout@v4
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # tokio-tar (dev-only, via testcontainers) has no fixed release.
-          ignore: RUSTSEC-2025-0111
+          # Ignored advisories are optional/feature-gated transitive deps that are
+          # not reachable from any built configuration:
+          #   RUSTSEC-2025-0111  tokio-tar (dev-only via testcontainers; no fix)
+          #   RUSTSEC-2026-0118  hickory-proto (libp2p DNS transport; not enabled)
+          #   RUSTSEC-2026-0119  hickory-proto (same; not enabled)
+          #   RUSTSEC-2023-0071  rsa (optional transitive; no fix available)
+          ignore: RUSTSEC-2025-0111,RUSTSEC-2026-0118,RUSTSEC-2026-0119,RUSTSEC-2023-0071
 
   deny:
     name: cargo-deny

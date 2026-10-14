@@ -12,10 +12,18 @@ yanked = "deny"
 # Only fail on unmaintained crates we own; transitive unmaintained crates are
 # surfaced as warnings rather than blocking the build.
 unmaintained = "workspace"
-# RUSTSEC-2025-0111 (tokio-tar PAX header smuggling): no fixed release exists.
-# tokio-tar is only pulled transitively by testcontainers/bollard for the
-# Docker-backed integration tests (dev-only), not by any shipped binary.
-ignore = ["RUSTSEC-2025-0111"]
+# Ignored advisories are optional/feature-gated transitive deps that are not
+# reachable from any built configuration:
+#   RUSTSEC-2025-0111  tokio-tar (dev-only via testcontainers; no fix)
+#   RUSTSEC-2026-0118  hickory-proto (libp2p DNS transport; not enabled)
+#   RUSTSEC-2026-0119  hickory-proto (same; not enabled)
+#   RUSTSEC-2023-0071  rsa (optional transitive; no fix available)
+ignore = [
+    "RUSTSEC-2025-0111",
+    "RUSTSEC-2026-0118",
+    "RUSTSEC-2026-0119",
+    "RUSTSEC-2023-0071",
+]
 
 [licenses]
 version = 2
