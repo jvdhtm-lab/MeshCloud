@@ -407,6 +407,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(
+        windows,
+        ignore = "Wasmtime's longjmp trap unwinding is unsupported on Windows"
+    )]
     fn fuel_exhaustion_is_terminated() {
         let limits = RuntimeLimits::from_megabytes(64, 1_000_000, Duration::from_secs(30));
         let err = run(SPIN_WAT.as_bytes(), b"", &limits).unwrap_err();
@@ -414,6 +418,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(
+        windows,
+        ignore = "Wasmtime's longjmp trap unwinding is unsupported on Windows"
+    )]
     fn timeout_interrupts_long_execution() {
         let limits = RuntimeLimits {
             max_memory_bytes: 64 * 1024 * 1024,
@@ -425,6 +433,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(
+        windows,
+        ignore = "Wasmtime's longjmp trap unwinding is unsupported on Windows"
+    )]
     fn memory_limit_is_enforced() {
         let limits = RuntimeLimits::from_megabytes(1, 100_000_000, Duration::from_secs(5));
         let err = run(GROW_WAT.as_bytes(), b"", &limits).unwrap_err();
