@@ -75,9 +75,12 @@ docker compose down -v
 
 The control plane serves a self-contained web dashboard (no build step) at `/`:
 
+![MeshCloud dashboard](docs/dashboard.png)
+
 - live health, replica role, and mesh peers;
 - node and agent tables (including **agents per node**);
 - jobs, contributions, settlements, and storage objects;
+- an **Add a node** panel that generates join commands;
 - Prometheus metrics.
 
 ## Add a node / machine to the network
