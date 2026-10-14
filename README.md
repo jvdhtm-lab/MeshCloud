@@ -80,6 +80,71 @@ The control plane serves a self-contained web dashboard (no build step) at `/`:
 - jobs, contributions, settlements, and storage objects;
 - Prometheus metrics.
 
+## Add a node / machine to the network
+
+A node is a `mesh-worker` process with its own persistent Ed25519 identity. Workers **pull** work from the control plane, so a new machine only needs **outbound** access to the control-plane URL — the control plane never dials into workers.
+
+The dashboard has an **Add a node** panel that generates these commands for you (set the control-plane URL, storage, and agent count, then copy).
+
+### Docker — container on the same compose network
+
+Add a service to `docker-compose.yml` (reusing the worker image and the `worker-env` anchor):
+
+```yaml
+  mesh-worker-4:
+    image: meshcloud-worker:latest
+    environment:
+      <<: *worker-env          # control-plane URL, storage, etc.
+      MESH_AGENT_COUNT: "1"    # 0 = compute only
+    volumes:
+      - mesh-worker-4-data:/var/lib/meshcloud   # persistent identity
+    depends_on:
+      - mesh-control-plane
+```
+
+Add `mesh-worker-4-data:` under `volumes:`, then `docker compose up -d mesh-worker-4`.
+
+### Docker — standalone container or a separate host
+
+```bash
+docker run -d --name mesh-worker-new \
+  -e MESH_CONTROL_PLANE_URL=http://<control-plane-host>:8080 \
+  -e MESH_IDENTITY_PATH=/var/lib/meshcloud/node.key \
+  -e MESH_STORAGE_GB=50 \
+  -e MESH_AGENT_COUNT=1 \
+  -v mesh-worker-new-data:/var/lib/meshcloud \
+  meshcloud-worker:latest
+```
+
+### Native — Windows, macOS, or Linux
+
+```bash
+cargo build --release -p mesh-worker
+
+MESH_CONTROL_PLANE_URL=http://<control-plane-host>:8080 \
+MESH_IDENTITY_PATH=./node.key \
+MESH_STORAGE_GB=50 \
+MESH_AGENT_COUNT=1 \
+./target/release/mesh-worker
+```
+
+(On Windows, set `$env:MESH_CONTROL_PLANE_URL = "..."` etc. first.)
+
+### Verify
+
+```bash
+cargo run -p mesh-cli -- node ls
+```
+
+or open the dashboard and look at the **Nodes** table (the **Agents** column shows agents per node).
+
+### Notes
+
+- **Identity is persistent** — the node id and participant derive from the key file/volume. Delete it to get a fresh identity.
+- **Capabilities**: CPU/RAM are auto-detected; `MESH_STORAGE_GB`, `MESH_GPU`, and the `MESH_MAX_*` caps are configuration.
+- **List-valued settings** (`supported_workloads`, `agent_skills`) can't be set via env — put them in a TOML file and point `MESH_CONFIG` at it.
+- A node receives work only while it has a **valid, unrevoked offer** (refreshed by heartbeats); revoke with `POST /api/v1/nodes/{id}/offer/revoke`.
+
 ## Local development
 
 ```bash

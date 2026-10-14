@@ -7,7 +7,9 @@ use axum::{Json, Router};
 use serde::Deserialize;
 
 use mesh_protocol::ids::ReceiptId;
-use mesh_protocol::{AgentId, ContributionView, CreditBalanceView, DisputeRequest, DisputeView, ParticipantId};
+use mesh_protocol::{
+    AgentId, ContributionView, CreditBalanceView, DisputeRequest, DisputeView, ParticipantId,
+};
 
 use crate::error::ApiError;
 use crate::AppState;

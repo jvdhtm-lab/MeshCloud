@@ -664,7 +664,13 @@ mod tests {
     #[test]
     fn unknown_workload_is_rejected() {
         let config = WorkerConfig::default();
-        assert!(execute("cobol", &serde_json::json!({}), &config, &worker_limits(&config)).is_err());
+        assert!(execute(
+            "cobol",
+            &serde_json::json!({}),
+            &config,
+            &worker_limits(&config)
+        )
+        .is_err());
     }
 
     #[test]
@@ -690,4 +696,3 @@ mod tests {
         assert!(log.contains("hello from meshcloud"));
     }
 }
-

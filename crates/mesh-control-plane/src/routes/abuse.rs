@@ -6,16 +6,17 @@ use axum::routing::get;
 use axum::{Json, Router};
 use sqlx::Row;
 
-use mesh_protocol::{
-    AbuseReportRequest, AbuseReportResponse, AbuseReportView, ParticipantId,
-};
+use mesh_protocol::{AbuseReportRequest, AbuseReportResponse, AbuseReportView, ParticipantId};
 
 use crate::error::ApiError;
 use crate::AppState;
 
 /// Abuse routes.
 pub fn router() -> Router<AppState> {
-    Router::new().route("/api/v1/abuse/reports", get(list_reports).post(report_abuse))
+    Router::new().route(
+        "/api/v1/abuse/reports",
+        get(list_reports).post(report_abuse),
+    )
 }
 
 /// Record an abuse report; quarantine the subject past the configured threshold.
@@ -24,10 +25,14 @@ pub async fn report_abuse(
     Json(req): Json<AbuseReportRequest>,
 ) -> Result<(StatusCode, Json<AbuseReportResponse>), ApiError> {
     if req.subject_type != "node" && req.subject_type != "agent" {
-        return Err(ApiError::bad_request("subject_type must be `node` or `agent`"));
+        return Err(ApiError::bad_request(
+            "subject_type must be `node` or `agent`",
+        ));
     }
     if req.subject_id.trim().is_empty() || req.category.trim().is_empty() {
-        return Err(ApiError::bad_request("subject_id and category are required"));
+        return Err(ApiError::bad_request(
+            "subject_id and category are required",
+        ));
     }
 
     let report_id = format!("abr-{}", uuid::Uuid::new_v4());
@@ -79,7 +84,9 @@ pub async fn report_abuse(
 }
 
 /// List recent abuse reports.
-pub async fn list_reports(State(state): State<AppState>) -> Result<Json<Vec<AbuseReportView>>, ApiError> {
+pub async fn list_reports(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<AbuseReportView>>, ApiError> {
     let rows = sqlx::query(
         "SELECT report_id, reporter_participant, subject_type, subject_id, category, detail, \
              created_at FROM abuse_reports ORDER BY created_at DESC LIMIT 200",

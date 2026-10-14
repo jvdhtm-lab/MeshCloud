@@ -32,6 +32,13 @@
   .empty { padding:14px 16px; color:var(--muted); }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   @media (max-width:900px){ .grid2{ grid-template-columns:1fr; } }
+  .form { display:flex; flex-wrap:wrap; gap:16px; margin:4px 0 10px; }
+  .form label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
+  .form input { background:var(--bg); border:1px solid var(--line); color:var(--text); padding:7px 9px; border-radius:6px; min-width:220px; }
+  h3 { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:16px 0 6px; }
+  pre.cmd { background:#0b0f19; border:1px solid var(--line); border-radius:8px; padding:12px; overflow:auto; color:#cfe3ff; margin:0 0 6px; }
+  button.copy { background:var(--accent); color:#04122b; border:0; border-radius:6px; padding:6px 12px; cursor:pointer; font-weight:600; }
+  button.copy:hover { filter:brightness(1.08); }
 </style>
 </head>
 <body>
@@ -55,6 +62,43 @@
     <section><h2>Settlements</h2><div id="settlements"></div></section>
   </div>
   <section><h2>Storage objects</h2><div id="storage"></div></section>
+  <section>
+    <h2>Add a node</h2>
+    <div style="padding:16px">
+      <p style="color:var(--muted);margin-top:0">
+        A node is a <code>mesh-worker</code> with its own persistent identity. It <b>pulls</b> work from the control
+        plane, so the new machine only needs <b>outbound</b> access to the control-plane URL below.
+      </p>
+      <div class="form">
+        <label>Control-plane URL reachable by the new node
+          <input id="joinUrl" />
+        </label>
+        <label>Storage offered (GB)
+          <input id="joinStorage" type="number" min="1" value="50" />
+        </label>
+        <label>Agents on this node
+          <input id="joinAgents" type="number" min="0" value="0" />
+        </label>
+      </div>
+
+      <h3>Docker — new container (separate from the compose network)</h3>
+      <pre class="cmd" id="joinDocker"></pre>
+      <button class="copy" onclick="copyCmd('joinDocker', this)">Copy</button>
+
+      <h3>Docker Compose — add a service to the local network</h3>
+      <pre class="cmd" id="joinCompose"></pre>
+      <button class="copy" onclick="copyCmd('joinCompose', this)">Copy</button>
+
+      <h3>Native — any machine (Windows/macOS/Linux)</h3>
+      <pre class="cmd" id="joinNative"></pre>
+      <button class="copy" onclick="copyCmd('joinNative', this)">Copy</button>
+
+      <p style="color:var(--muted);margin-bottom:0">
+        Verify with <code>mesh node ls</code> or the <b>Nodes</b> table above (look at the <b>Agents</b> column).
+        Delete the identity file/volume to get a fresh node id.
+      </p>
+    </div>
+  </section>
   <section><h2>Metrics</h2><div id="metrics"><pre style="margin:0;padding:12px 16px;color:var(--muted)"></pre></div></section>
 </main>
 <script>
@@ -156,6 +200,46 @@ async function refresh(){
 
   $("updated").textContent = "updated "+new Date().toLocaleTimeString();
 }
+function copyCmd(id, btn){
+  const text = $(id).textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  if (btn){ const t = btn.textContent; btn.textContent = "Copied!"; setTimeout(()=>btn.textContent = t, 1200); }
+}
+
+function renderJoin(){
+  const url = ($("joinUrl").value || window.location.origin).replace(/\/+$/,"");
+  const storage = $("joinStorage").value || "50";
+  const agents = $("joinAgents").value || "0";
+  $("joinDocker").textContent =
+`docker run -d --name mesh-worker-new \\
+  -e MESH_CONTROL_PLANE_URL=${url} \\
+  -e MESH_IDENTITY_PATH=/var/lib/meshcloud/node.key \\
+  -e MESH_STORAGE_GB=${storage} \\
+  -e MESH_AGENT_COUNT=${agents} \\
+  -v mesh-worker-new-data:/var/lib/meshcloud \\
+  meshcloud-worker:latest`;
+  $("joinCompose").textContent =
+`  mesh-worker-new:
+    image: meshcloud-worker:latest
+    environment:
+      <<: *worker-env
+      MESH_AGENT_COUNT: "${agents}"
+    volumes:
+      - mesh-worker-new-data:/var/lib/meshcloud
+    depends_on:
+      - mesh-control-plane`;
+  $("joinNative").textContent =
+`# build once:  cargo build --release -p mesh-worker
+$env:MESH_CONTROL_PLANE_URL = "${url}"
+$env:MESH_IDENTITY_PATH     = "C:\\meshcloud\\node.key"
+$env:MESH_STORAGE_GB        = "${storage}"
+$env:MESH_AGENT_COUNT       = "${agents}"
+.\\target\\release\\mesh-worker.exe`;
+}
+
+$("joinUrl").value = window.location.origin;
+["joinUrl","joinStorage","joinAgents"].forEach(id => $(id).addEventListener("input", renderJoin));
+renderJoin();
 refresh();
 setInterval(refresh, 3000);
 </script>

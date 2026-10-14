@@ -70,8 +70,5 @@ pub async fn metrics(State(state): State<AppState>) -> Result<impl IntoResponse,
          # TYPE meshcloud_mesh_peers gauge\nmeshcloud_mesh_peers {peers}\n"
     );
 
-    Ok((
-        [(CONTENT_TYPE, "text/plain; version=0.0.4")],
-        body,
-    ))
+    Ok(([(CONTENT_TYPE, "text/plain; version=0.0.4")], body))
 }
