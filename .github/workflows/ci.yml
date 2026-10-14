@@ -57,12 +57,12 @@ jobs:
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # tokio-tar (dev-only, via testcontainers) has no fixed release.
+          ignore: RUSTSEC-2025-0111
 
   deny:
     name: cargo-deny
     runs-on: ubuntu-latest
-    # Advisory in the prototype: reports findings without failing the build.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v2
